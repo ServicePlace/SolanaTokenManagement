@@ -7,23 +7,38 @@ const CustomLogic: React.FC = () => {
     name: '',
     description: '',
     code: '',
-    type: 'reward'
+    type: 'reward',
   });
-
   const [savedLogic, setSavedLogic] = useState<CustomLogicType[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedLogic = localStorage.getItem('customLogic');
-    if (storedLogic) {
-      setSavedLogic(JSON.parse(storedLogic));
+    try {
+      const storedLogic = localStorage.getItem('customLogic');
+      if (storedLogic) {
+        setSavedLogic(JSON.parse(storedLogic));
+      }
+    } catch (e) {
+      setError('Failed to load saved logic');
+      console.error(e);
     }
   }, []);
 
   const handleSave = () => {
-    const updatedLogic = [...savedLogic, logic];
-    setSavedLogic(updatedLogic);
-    localStorage.setItem('customLogic', JSON.stringify(updatedLogic));
-    alert('Custom logic saved successfully!');
+    setIsSaving(true);
+    setError(null);
+    try {
+      const updatedLogic = [...savedLogic, logic];
+      setSavedLogic(updatedLogic);
+      localStorage.setItem('customLogic', JSON.stringify(updatedLogic));
+      alert('Custom logic saved successfully!');
+    } catch (e) {
+      setError('Failed to save logic');
+      console.error(e);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -38,6 +53,7 @@ const CustomLogic: React.FC = () => {
 
         <div className="bg-white shadow sm:rounded-lg">
           <div className="px-4 py-5 sm:p-6">
+            {error && <div className="text-red-500 mb-4">{error}</div>}
             <div className="grid grid-cols-1 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
@@ -58,7 +74,9 @@ const CustomLogic: React.FC = () => {
                 </label>
                 <textarea
                   value={logic.description}
-                  onChange={(e) => setLogic({ ...logic, description: e.target.value })}
+                  onChange={(e) =>
+                    setLogic({ ...logic, description: e.target.value })
+                  }
                   rows={3}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Describe what your custom logic does..."
@@ -71,7 +89,12 @@ const CustomLogic: React.FC = () => {
                 </label>
                 <select
                   value={logic.type}
-                  onChange={(e) => setLogic({ ...logic, type: e.target.value as CustomLogicType['type'] })}
+                  onChange={(e) =>
+                    setLogic({
+                      ...logic,
+                      type: e.target.value as CustomLogicType['type'],
+                    })
+                  }
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="reward">Reward System</option>
@@ -98,10 +121,17 @@ const CustomLogic: React.FC = () => {
               <div className="flex justify-end">
                 <button
                   onClick={handleSave}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  disabled={isSaving}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400"
                 >
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Logic
+                  {isSaving ? (
+                    'Saving...'
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Logic
+                    </>
+                  )}
                 </button>
               </div>
             </div>
